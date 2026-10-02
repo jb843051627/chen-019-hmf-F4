@@ -2,6 +2,8 @@ package com.fc.v2.common.quartz.task;
 import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fc.v2.model.auto.TSysUser;
+import com.fc.v2.model.custom.CycleSweep;
+import com.fc.v2.service.ITHmfCycleTaskService;
 import com.fc.v2.service.ITHmfUseFlowService;
 import com.fc.v2.service.ITSysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,20 @@ public class V2Task {
 
 	@Autowired
 	private ITHmfUseFlowService hmfUseFlowService;
+
+	@Autowired
+	private ITHmfCycleTaskService hmfCycleTaskService;
+
+	/**
+	 * 结息催交单照日子自走来路：当轮算完再回写，界面补不进也拦不住。
+	 * 三数（等着办/已办结/催不动）同一次算出，没有到期条目是正常收尾，不告警。
+	 * runOnce(Date) 旧签名原样不动，对外挂的挑单走 sweepCycleTasks 这一个新写法。
+	 */
+	public void sweepCycleTasks()
+	{
+		CycleSweep sweep = hmfCycleTaskService.sweepCycleTasks(null);
+		System.out.println("结息催交本轮：" + sweep.getMessage() + "，执行时间:" + DateUtil.now());
+	}
 
 	/**
 	 * 使用申请单公示天数自推来路：天数走完的单在这一脚上往前扫一档，

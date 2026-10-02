@@ -72,6 +72,17 @@ public class THmfArch implements Serializable {
     @ApiModelProperty(value = "底册情形 0在册 1已迁出")
     private Integer status;
 
+    /** 业委会联系人手机号（催交走短信那一路） */
+    @TableField("contact_mobile")
+    @ApiModelProperty(value = "业委会联系人手机号")
+    private String contactMobile;
+
+    /** 联系人栏最近填报时刻（一个季度没填过即当失联） */
+    @TableField("contact_fill_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @ApiModelProperty(value = "联系人栏最近填报时刻")
+    private Date contactFillAt;
+
     /** 删除标记 0正常 1删除 */
     @TableField("del_flag")
     @ApiModelProperty(value = "删除标记 0正常 1删除")
@@ -174,6 +185,22 @@ public class THmfArch implements Serializable {
 
     public void setStatus(Integer status) {
         this.status = status;
+    }
+
+    public String getContactMobile() {
+        return contactMobile;
+    }
+
+    public void setContactMobile(String contactMobile) {
+        this.contactMobile = contactMobile;
+    }
+
+    public Date getContactFillAt() {
+        return contactFillAt;
+    }
+
+    public void setContactFillAt(Date contactFillAt) {
+        this.contactFillAt = contactFillAt;
     }
 
     public Integer getDelFlag() {

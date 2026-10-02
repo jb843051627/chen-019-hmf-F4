@@ -12,18 +12,17 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * 结息催交单对象 t_hmf_cycle_task
+ * 结息催交单轮次出手痕迹对象 t_hmf_cycle_log
  *
  * @author fuce
- * @date 2026-09-12
+ * @date 2026-10-02
  */
-@TableName("t_hmf_cycle_task")
-@ApiModel(value = "THmfCycleTask", description = "结息催交单")
-public class THmfCycleTask implements Serializable {
+@TableName("t_hmf_cycle_log")
+@ApiModel(value = "THmfCycleLog", description = "结息催交单轮次出手痕迹")
+public class THmfCycleLog implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** 主键 */
@@ -32,14 +31,14 @@ public class THmfCycleTask implements Serializable {
     @ApiModelProperty(value = "主键")
     private Long id;
 
-    /** 结息催交单号 */
-    @TableField("item_no")
-    @ApiModelProperty(value = "结息催交单号")
-    private String itemNo;
+    /** 所属结息催交单 */
+    @TableField("task_id")
+    @ApiModelProperty(value = "所属结息催交单")
+    private Long taskId;
 
-    /** 对哪一户分户底册（按底册代号挂） */
+    /** 所属分户底册代号 */
     @TableField("site_no")
-    @ApiModelProperty(value = "对哪一户分户底册")
+    @ApiModelProperty(value = "所属分户底册代号")
     private String siteNo;
 
     /** 事由 1结息 2催交 */
@@ -47,54 +46,42 @@ public class THmfCycleTask implements Serializable {
     @ApiModelProperty(value = "事由 1结息 2催交")
     private Integer bizType;
 
-    /** 应该出手那一天的止点时刻（钉死，不许为凑一批往后挪） */
-    @TableField("due_at")
+    /** 本轮扫描时刻（同一次执行的行取同一值） */
+    @TableField("round_at")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    @ApiModelProperty(value = "应该出手那一天的止点时刻")
-    private Date dueAt;
+    @ApiModelProperty(value = "本轮扫描时刻")
+    private Date roundAt;
 
-    /** 可提前几日开口（提前期，天数） */
-    @TableField("amount")
-    @ApiModelProperty(value = "可提前几日开口")
-    private BigDecimal amount;
+    /** 本笔动作 1办结 2撞墙判催不动 3逾期撤回转催不动 4封存撞车拒收 5窗口压着候办 10站内送达 11短信送达 */
+    @TableField("action")
+    @ApiModelProperty(value = "本笔动作")
+    private Integer action;
 
-    /** 按哪一份事由文本去办 */
-    @TableField("tpl_code")
-    @ApiModelProperty(value = "按哪一份事由文本去办")
-    private String tplCode;
+    /** 本笔落定后条目情形（结局行用） */
+    @TableField("status_after")
+    @ApiModelProperty(value = "本笔落定后条目情形")
+    private Integer statusAfter;
 
-    /** 事由与被催分户底册记要 */
-    @TableField("content")
-    @ApiModelProperty(value = "事由与被催分户底册记要")
-    private String content;
+    /** 送达路 1物业站内消息 2业委会联系人手机短信（仅送达行） */
+    @TableField("channel")
+    @ApiModelProperty(value = "送达路 1站内 2短信")
+    private Integer channel;
 
-    /** 条目情形 0候办 1已办结 2催不动 */
-    @TableField("status")
-    @ApiModelProperty(value = "条目情形 0候办 1已办结 2催不动")
-    private Integer status;
+    /** 该路是否送达 1送达 0未送达（仅送达行） */
+    @TableField("delivered")
+    @ApiModelProperty(value = "该路是否送达")
+    private Integer delivered;
 
-    /** 完成那一刻（与情形翻转同脚落，缺一笔不算完） */
-    @TableField("finish_at")
+    /** 落笔时刻（即落库时刻） */
+    @TableField("log_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    @ApiModelProperty(value = "完成那一刻")
-    private Date finishAt;
+    @ApiModelProperty(value = "落笔时刻")
+    private Date logTime;
 
-    /** 判催不动那一刻（撞墙/逾期撤回） */
-    @TableField("fail_at")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    @ApiModelProperty(value = "判催不动那一刻")
-    private Date failAt;
-
-    /** 为什么催不动（迁出/失联/逾期撤回，跟着记进行里） */
-    @TableField("fail_reason")
-    @ApiModelProperty(value = "为什么催不动")
-    private String failReason;
-
-    /** 最近一次进轮次的扫描时刻 */
-    @TableField("last_round_at")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    @ApiModelProperty(value = "最近一次进轮次的扫描时刻")
-    private Date lastRoundAt;
+    /** 明细（撞墙缘由、撤回凭据、撞车说明等） */
+    @TableField("detail")
+    @ApiModelProperty(value = "明细")
+    private String detail;
 
     /** 删除标记 0正常 1删除 */
     @TableField("del_flag")
@@ -136,12 +123,12 @@ public class THmfCycleTask implements Serializable {
         this.id = id;
     }
 
-    public String getItemNo() {
-        return itemNo;
+    public Long getTaskId() {
+        return taskId;
     }
 
-    public void setItemNo(String itemNo) {
-        this.itemNo = itemNo;
+    public void setTaskId(Long taskId) {
+        this.taskId = taskId;
     }
 
     public String getSiteNo() {
@@ -160,76 +147,60 @@ public class THmfCycleTask implements Serializable {
         this.bizType = bizType;
     }
 
-    public Date getDueAt() {
-        return dueAt;
+    public Date getRoundAt() {
+        return roundAt;
     }
 
-    public void setDueAt(Date dueAt) {
-        this.dueAt = dueAt;
+    public void setRoundAt(Date roundAt) {
+        this.roundAt = roundAt;
     }
 
-    public BigDecimal getAmount() {
-        return amount;
+    public Integer getAction() {
+        return action;
     }
 
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
+    public void setAction(Integer action) {
+        this.action = action;
     }
 
-    public String getTplCode() {
-        return tplCode;
+    public Integer getStatusAfter() {
+        return statusAfter;
     }
 
-    public void setTplCode(String tplCode) {
-        this.tplCode = tplCode;
+    public void setStatusAfter(Integer statusAfter) {
+        this.statusAfter = statusAfter;
     }
 
-    public String getContent() {
-        return content;
+    public Integer getChannel() {
+        return channel;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    public void setChannel(Integer channel) {
+        this.channel = channel;
     }
 
-    public Integer getStatus() {
-        return status;
+    public Integer getDelivered() {
+        return delivered;
     }
 
-    public void setStatus(Integer status) {
-        this.status = status;
+    public void setDelivered(Integer delivered) {
+        this.delivered = delivered;
     }
 
-    public Date getFinishAt() {
-        return finishAt;
+    public Date getLogTime() {
+        return logTime;
     }
 
-    public void setFinishAt(Date finishAt) {
-        this.finishAt = finishAt;
+    public void setLogTime(Date logTime) {
+        this.logTime = logTime;
     }
 
-    public Date getFailAt() {
-        return failAt;
+    public String getDetail() {
+        return detail;
     }
 
-    public void setFailAt(Date failAt) {
-        this.failAt = failAt;
-    }
-
-    public String getFailReason() {
-        return failReason;
-    }
-
-    public void setFailReason(String failReason) {
-        this.failReason = failReason;
-    }
-
-    public Date getLastRoundAt() {
-        return lastRoundAt;
-    }
-
-    public void setLastRoundAt(Date lastRoundAt) {
-        this.lastRoundAt = lastRoundAt;
+    public void setDetail(String detail) {
+        this.detail = detail;
     }
 
     public Integer getDelFlag() {

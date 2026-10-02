@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS t_hmf_arch (
   th2_max decimal(12,2) DEFAULT NULL COMMENT '中界(平方米)',
   th3_max decimal(12,2) DEFAULT NULL COMMENT '高界(平方米)',
   status int DEFAULT NULL COMMENT '底册情形 0在册 1已迁出',
+  contact_mobile varchar(32) DEFAULT NULL COMMENT '业委会联系人手机号（催交走短信那一路）',
+  contact_fill_at datetime DEFAULT NULL COMMENT '联系人栏最近填报时刻（一个季度没填过即当失联）',
   del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
   create_by varchar(64) DEFAULT NULL COMMENT '创建者',
   create_time datetime DEFAULT NULL COMMENT '创建时间',
@@ -87,18 +89,54 @@ CREATE TABLE IF NOT EXISTS t_hmf_budget_sign (
 CREATE TABLE IF NOT EXISTS t_hmf_cycle_task (
   id bigint NOT NULL COMMENT '主键',
   item_no varchar(64) DEFAULT NULL COMMENT '结息催交单号',
-  due_at datetime DEFAULT NULL COMMENT '该动手那一日的止点时刻',
-  amount decimal(12,2) DEFAULT NULL COMMENT '可提前几日开口催办',
+  site_no varchar(64) DEFAULT NULL COMMENT '对哪一户分户底册（按底册代号挂）',
+  biz_type int DEFAULT NULL COMMENT '事由 1结息 2催交',
+  due_at datetime DEFAULT NULL COMMENT '应该出手那一天的止点时刻（钉死，不许为凑批后挪）',
+  amount decimal(12,2) DEFAULT NULL COMMENT '可提前几日开口（提前期，天数）',
+  tpl_code varchar(64) DEFAULT NULL COMMENT '按哪一份事由文本去办',
   content varchar(255) DEFAULT NULL COMMENT '事由与被催分户底册记要',
-  status int DEFAULT NULL COMMENT '条目情形 0候办 1已办结 2催不成',
+  status int DEFAULT NULL COMMENT '条目情形 0候办 1已办结 2催不动',
+  finish_at datetime DEFAULT NULL COMMENT '完成那一刻（办结两笔之一，与情形翻转同脚落，缺一笔不算完）',
+  fail_at datetime DEFAULT NULL COMMENT '判催不动那一刻（撞墙/逾期撤回）',
+  fail_reason varchar(500) DEFAULT NULL COMMENT '为什么催不动（迁出/失联/逾期撤回，跟着记进行里）',
+  last_round_at datetime DEFAULT NULL COMMENT '最近一次进轮次的扫描时刻',
   del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
   create_by varchar(64) DEFAULT NULL COMMENT '创建者',
   create_time datetime DEFAULT NULL COMMENT '创建时间',
   update_by varchar(64) DEFAULT NULL COMMENT '更新者',
   update_time datetime DEFAULT NULL COMMENT '更新时间',
   remark varchar(500) DEFAULT NULL COMMENT '备注',
+  KEY idx_site (site_no),
+  KEY idx_due (due_at),
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='结息催交单';
+
+-- 轮次出手痕迹：定时任务每轮一条结局/送达行，只添。同一次 runOnce 的所有行 round_at 相同，
+-- 页面三数照 round_at 从本表逐条点出（等着办=按住/封存撞车，已办结=办结，催不动=判死/撤回）。
+-- 催交两路送达各立一行（channel 1站内 2短信），谁也顶不了谁。
+CREATE TABLE IF NOT EXISTS t_hmf_cycle_log (
+  id bigint NOT NULL COMMENT '主键',
+  task_id bigint NOT NULL COMMENT '所属结息催交单',
+  site_no varchar(64) DEFAULT NULL COMMENT '所属分户底册代号',
+  biz_type int DEFAULT NULL COMMENT '事由 1结息 2催交',
+  round_at datetime DEFAULT NULL COMMENT '本轮扫描时刻（同一次执行的行取同一值）',
+  action int DEFAULT NULL COMMENT '本笔动作 1办结 2撞墙判催不动 3逾期撤回转催不动 4封存撞车拒收 5窗口压着候办 10站内送达 11短信送达',
+  status_after int DEFAULT NULL COMMENT '本笔落定后条目情形（结局行用）',
+  channel int DEFAULT NULL COMMENT '送达路 1物业站内消息 2业委会联系人手机短信（仅送达行）',
+  delivered int DEFAULT NULL COMMENT '该路是否送达 1送达 0未送达（仅送达行）',
+  log_time datetime DEFAULT NULL COMMENT '落笔时刻（即落库时刻）',
+  detail varchar(500) DEFAULT NULL COMMENT '明细（撞墙缘由、撤回凭据、撞车说明等）',
+  del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
+  create_by varchar(64) DEFAULT NULL COMMENT '创建者',
+  create_time datetime DEFAULT NULL COMMENT '创建时间',
+  update_by varchar(64) DEFAULT NULL COMMENT '更新者',
+  update_time datetime DEFAULT NULL COMMENT '更新时间',
+  remark varchar(500) DEFAULT NULL COMMENT '备注',
+  KEY idx_round (round_at),
+  KEY idx_task (task_id),
+  KEY idx_site_day (site_no, log_time),
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='结息催交单轮次出手痕迹';
 
 CREATE TABLE IF NOT EXISTS t_hmf_pay_book (
   id bigint NOT NULL COMMENT '主键',
