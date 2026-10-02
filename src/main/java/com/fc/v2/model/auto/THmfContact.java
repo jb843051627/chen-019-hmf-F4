@@ -12,21 +12,19 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * 结息催交单对象 t_hmf_cycle_task
+ * 分户底册业委会联系人对象 t_hmf_contact
  *
- * 一行一件事：对哪一户底册、结息还是催交、止点在哪一刻、可提前几日、按哪份事由文本、走到哪一步。
- * 去向只有三种：候办(0)、已办结(1)、催不成(2)。
+ * 联系人栏一个季度都没填过，催办那条当场判催不成；页面上仍翻得到这条。
  *
  * @author fuce
- * @date 2026-09-12
+ * @date 2026-10-02
  */
-@TableName("t_hmf_cycle_task")
-@ApiModel(value = "THmfCycleTask", description = "结息催交单")
-public class THmfCycleTask implements Serializable {
+@TableName("t_hmf_contact")
+@ApiModel(value = "THmfContact", description = "分户底册业委会联系人")
+public class THmfContact implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** 主键 */
@@ -35,47 +33,26 @@ public class THmfCycleTask implements Serializable {
     @ApiModelProperty(value = "主键")
     private Long id;
 
-    /** 结息催交单号 */
-    @TableField("item_no")
-    @ApiModelProperty(value = "结息催交单号")
-    private String itemNo;
-
-    /** 事由 0结息 1催交 */
-    @TableField("item_kind")
-    @ApiModelProperty(value = "事由 0结息 1催交")
-    private Integer itemKind;
-
-    /** 被催的分户底册代号 */
+    /** 所属分户底册代号 */
     @TableField("site_no")
-    @ApiModelProperty(value = "被催的分户底册代号")
+    @ApiModelProperty(value = "所属分户底册代号")
     private String siteNo;
 
-    /** 该动手那一日的止点时刻（钉死，不为凑一批往后挪） */
-    @TableField("due_at")
+    /** 业委会联系人姓名 */
+    @TableField("contact_name")
+    @ApiModelProperty(value = "业委会联系人姓名")
+    private String contactName;
+
+    /** 手机短信号码 */
+    @TableField("phone")
+    @ApiModelProperty(value = "手机短信号码")
+    private String phone;
+
+    /** 联系人栏最近一次填写时刻 */
+    @TableField("fill_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    @ApiModelProperty(value = "该动手那一日的止点时刻")
-    private Date dueAt;
-
-    /** 可提前几日开口催办（能商量的只有这一格） */
-    @TableField("amount")
-    @ApiModelProperty(value = "可提前几日开口催办")
-    private BigDecimal amount;
-
-    /** 事由与被催分户底册记要（按哪一份事由文本去办） */
-    @TableField("content")
-    @ApiModelProperty(value = "事由与被催分户底册记要")
-    private String content;
-
-    /** 办结那一刻（与改去向同一笔落；撤回转催不成不盖此列，头回定的日子、办结时刻都查得着） */
-    @TableField("finish_at")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    @ApiModelProperty(value = "办结那一刻")
-    private Date finishAt;
-
-    /** 条目情形 0候办 1已办结 2催不成 */
-    @TableField("status")
-    @ApiModelProperty(value = "条目情形 0候办 1已办结 2催不成")
-    private Integer status;
+    @ApiModelProperty(value = "联系人栏最近一次填写时刻")
+    private Date fillTime;
 
     /** 删除标记 0正常 1删除 */
     @TableField("del_flag")
@@ -117,22 +94,6 @@ public class THmfCycleTask implements Serializable {
         this.id = id;
     }
 
-    public String getItemNo() {
-        return itemNo;
-    }
-
-    public void setItemNo(String itemNo) {
-        this.itemNo = itemNo;
-    }
-
-    public Integer getItemKind() {
-        return itemKind;
-    }
-
-    public void setItemKind(Integer itemKind) {
-        this.itemKind = itemKind;
-    }
-
     public String getSiteNo() {
         return siteNo;
     }
@@ -141,44 +102,28 @@ public class THmfCycleTask implements Serializable {
         this.siteNo = siteNo;
     }
 
-    public Date getDueAt() {
-        return dueAt;
+    public String getContactName() {
+        return contactName;
     }
 
-    public void setDueAt(Date dueAt) {
-        this.dueAt = dueAt;
+    public void setContactName(String contactName) {
+        this.contactName = contactName;
     }
 
-    public BigDecimal getAmount() {
-        return amount;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
-    public String getContent() {
-        return content;
+    public Date getFillTime() {
+        return fillTime;
     }
 
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public Date getFinishAt() {
-        return finishAt;
-    }
-
-    public void setFinishAt(Date finishAt) {
-        this.finishAt = finishAt;
-    }
-
-    public Integer getStatus() {
-        return status;
-    }
-
-    public void setStatus(Integer status) {
-        this.status = status;
+    public void setFillTime(Date fillTime) {
+        this.fillTime = fillTime;
     }
 
     public Integer getDelFlag() {

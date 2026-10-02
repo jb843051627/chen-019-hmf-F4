@@ -87,18 +87,83 @@ CREATE TABLE IF NOT EXISTS t_hmf_budget_sign (
 CREATE TABLE IF NOT EXISTS t_hmf_cycle_task (
   id bigint NOT NULL COMMENT '主键',
   item_no varchar(64) DEFAULT NULL COMMENT '结息催交单号',
-  due_at datetime DEFAULT NULL COMMENT '该动手那一日的止点时刻',
-  amount decimal(12,2) DEFAULT NULL COMMENT '可提前几日开口催办',
-  content varchar(255) DEFAULT NULL COMMENT '事由与被催分户底册记要',
+  item_kind int DEFAULT NULL COMMENT '事由 0结息 1催交',
+  site_no varchar(64) DEFAULT NULL COMMENT '被催的分户底册代号',
+  due_at datetime DEFAULT NULL COMMENT '该动手那一日的止点时刻（钉死，不为凑批往后挪）',
+  amount decimal(12,2) DEFAULT NULL COMMENT '可提前几日开口催办（只记商量的格，不动止点）',
+  content varchar(255) DEFAULT NULL COMMENT '事由与被催分户底册记要（按哪一份事由文本去办）',
+  finish_at datetime DEFAULT NULL COMMENT '办结那一刻（与改去向同一笔落，缺一刻不算完；撤回转催不成不盖此列）',
   status int DEFAULT NULL COMMENT '条目情形 0候办 1已办结 2催不成',
   del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
   create_by varchar(64) DEFAULT NULL COMMENT '创建者',
   create_time datetime DEFAULT NULL COMMENT '创建时间',
   update_by varchar(64) DEFAULT NULL COMMENT '更新者',
   update_time datetime DEFAULT NULL COMMENT '更新时间',
-  remark varchar(500) DEFAULT NULL COMMENT '备注',
+  remark varchar(500) DEFAULT NULL COMMENT '备注（催不成的缘由、撤回笔等照写在此）',
+  KEY idx_due (due_at, status),
+  KEY idx_site (site_no),
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='结息催交单';
+
+-- 轮次台账：一轮扫描一行主行，挑中哪些单、各条按住/办结/催不成分明挂明细行，只添不抹。
+-- 页面三个数（候办/已办结/催不成）只认本表本 run_no 的明细，一条一条点得出来；屏看与点档同一次算。
+CREATE TABLE IF NOT EXISTS t_hmf_cycle_run_log (
+  id bigint NOT NULL COMMENT '主键',
+  run_no int DEFAULT NULL COMMENT '轮次号（一轮一号，顺序自占）',
+  run_at datetime DEFAULT NULL COMMENT '本轮扫描所照的止点时刻（页面时刻与它不齐时以它为准）',
+  item_id bigint DEFAULT NULL COMMENT '结息催交单id',
+  item_no varchar(64) DEFAULT NULL COMMENT '结息催交单号（誊照，便于离主行点档）',
+  action int DEFAULT NULL COMMENT '本轮该条的落定 0候办按住 1已办结 2催不成',
+  finish_at datetime DEFAULT NULL COMMENT '办结那一刻（action=1 才有，与主单同源誊一笔）',
+  detail varchar(1000) DEFAULT NULL COMMENT '按住缘由/催不成缘由/撤回笔迹',
+  del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
+  create_by varchar(64) DEFAULT NULL COMMENT '创建者',
+  create_time datetime DEFAULT NULL COMMENT '创建时间',
+  update_by varchar(64) DEFAULT NULL COMMENT '更新者',
+  update_time datetime DEFAULT NULL COMMENT '更新时间',
+  remark varchar(500) DEFAULT NULL COMMENT '备注',
+  KEY idx_run (run_no, action),
+  KEY idx_item_run (item_id, run_no),
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='结息催交轮次台账';
+
+-- 送达台账：催办的话两处各发各记——物业走站内消息(channel=0)，业委会联系人走手机短信(channel=1)；
+-- 一路一行，缺一路不算办结，不许拿手机那路顶站内那路。撤回另立 action=1 的行，送达行原样留着。
+CREATE TABLE IF NOT EXISTS t_hmf_cycle_send_log (
+  id bigint NOT NULL COMMENT '主键',
+  run_no int DEFAULT NULL COMMENT '落在哪一轮',
+  item_id bigint DEFAULT NULL COMMENT '结息催交单id',
+  channel int DEFAULT NULL COMMENT '送达路 0站内消息(物业) 1手机短信(业委会联系人)',
+  action int DEFAULT '0' COMMENT '本笔 0送达 1撤回',
+  sent_at datetime DEFAULT NULL COMMENT '送达那一刻',
+  target varchar(128) DEFAULT NULL COMMENT '送到哪儿（站内收件方/手机号）',
+  text varchar(1000) DEFAULT NULL COMMENT '照哪一份事由文本发出去的原话',
+  del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
+  create_by varchar(64) DEFAULT NULL COMMENT '创建者',
+  create_time datetime DEFAULT NULL COMMENT '创建时间',
+  update_by varchar(64) DEFAULT NULL COMMENT '更新者',
+  update_time datetime DEFAULT NULL COMMENT '更新时间',
+  remark varchar(500) DEFAULT NULL COMMENT '备注',
+  KEY idx_item (item_id, channel),
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='结息催交送达台账';
+
+-- 业委会联系人栏：一个季度没填过即认作联系不上（催办当场判催不成）。fill_time 为最近一次填写时刻。
+CREATE TABLE IF NOT EXISTS t_hmf_contact (
+  id bigint NOT NULL COMMENT '主键',
+  site_no varchar(64) DEFAULT NULL COMMENT '所属分户底册代号',
+  contact_name varchar(64) DEFAULT NULL COMMENT '业委会联系人姓名',
+  phone varchar(32) DEFAULT NULL COMMENT '手机短信号码',
+  fill_time datetime DEFAULT NULL COMMENT '联系人栏最近一次填写时刻',
+  del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
+  create_by varchar(64) DEFAULT NULL COMMENT '创建者',
+  create_time datetime DEFAULT NULL COMMENT '创建时间',
+  update_by varchar(64) DEFAULT NULL COMMENT '更新者',
+  update_time datetime DEFAULT NULL COMMENT '更新时间',
+  remark varchar(500) DEFAULT NULL COMMENT '备注',
+  KEY idx_site (site_no),
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='分户底册业委会联系人';
 
 CREATE TABLE IF NOT EXISTS t_hmf_pay_book (
   id bigint NOT NULL COMMENT '主键',

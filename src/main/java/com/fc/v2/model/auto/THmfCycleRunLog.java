@@ -12,21 +12,20 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * 结息催交单对象 t_hmf_cycle_task
+ * 结息催交轮次台账对象 t_hmf_cycle_run_log
  *
- * 一行一件事：对哪一户底册、结息还是催交、止点在哪一刻、可提前几日、按哪份事由文本、走到哪一步。
- * 去向只有三种：候办(0)、已办结(1)、催不成(2)。
+ * 一轮扫描一行主行、挑中的单各挂明细：挑中哪些、按住/办结/催不成各一条，只添不抹。
+ * 页面三个数只认本表本 run_no 的明细，一条一条点得出来；看屏与点档同一次算。
  *
  * @author fuce
- * @date 2026-09-12
+ * @date 2026-10-02
  */
-@TableName("t_hmf_cycle_task")
-@ApiModel(value = "THmfCycleTask", description = "结息催交单")
-public class THmfCycleTask implements Serializable {
+@TableName("t_hmf_cycle_run_log")
+@ApiModel(value = "THmfCycleRunLog", description = "结息催交轮次台账")
+public class THmfCycleRunLog implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** 主键 */
@@ -35,47 +34,43 @@ public class THmfCycleTask implements Serializable {
     @ApiModelProperty(value = "主键")
     private Long id;
 
-    /** 结息催交单号 */
+    /** 轮次号（一轮一号，顺序自占） */
+    @TableField("run_no")
+    @ApiModelProperty(value = "轮次号")
+    private Integer runNo;
+
+    /** 本轮扫描所照的止点时刻（页面时刻与它不齐时以它为准） */
+    @TableField("run_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @ApiModelProperty(value = "本轮扫描所照的止点时刻")
+    private Date runAt;
+
+    /** 结息催交单id */
+    @TableField("item_id")
+    @JsonSerialize(using = ToStringSerializer.class)
+    @ApiModelProperty(value = "结息催交单id")
+    private Long itemId;
+
+    /** 结息催交单号（誊照，便于离主行点档） */
     @TableField("item_no")
     @ApiModelProperty(value = "结息催交单号")
     private String itemNo;
 
-    /** 事由 0结息 1催交 */
-    @TableField("item_kind")
-    @ApiModelProperty(value = "事由 0结息 1催交")
-    private Integer itemKind;
+    /** 本轮该条的落定 0候办按住 1已办结 2催不成 */
+    @TableField("action")
+    @ApiModelProperty(value = "本轮落定 0候办按住 1已办结 2催不成")
+    private Integer action;
 
-    /** 被催的分户底册代号 */
-    @TableField("site_no")
-    @ApiModelProperty(value = "被催的分户底册代号")
-    private String siteNo;
-
-    /** 该动手那一日的止点时刻（钉死，不为凑一批往后挪） */
-    @TableField("due_at")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    @ApiModelProperty(value = "该动手那一日的止点时刻")
-    private Date dueAt;
-
-    /** 可提前几日开口催办（能商量的只有这一格） */
-    @TableField("amount")
-    @ApiModelProperty(value = "可提前几日开口催办")
-    private BigDecimal amount;
-
-    /** 事由与被催分户底册记要（按哪一份事由文本去办） */
-    @TableField("content")
-    @ApiModelProperty(value = "事由与被催分户底册记要")
-    private String content;
-
-    /** 办结那一刻（与改去向同一笔落；撤回转催不成不盖此列，头回定的日子、办结时刻都查得着） */
+    /** 办结那一刻（action=1 才有，与主单 finish_at 同源誊一笔） */
     @TableField("finish_at")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @ApiModelProperty(value = "办结那一刻")
     private Date finishAt;
 
-    /** 条目情形 0候办 1已办结 2催不成 */
-    @TableField("status")
-    @ApiModelProperty(value = "条目情形 0候办 1已办结 2催不成")
-    private Integer status;
+    /** 按住缘由/催不成缘由/撤回笔迹 */
+    @TableField("detail")
+    @ApiModelProperty(value = "缘由笔迹")
+    private String detail;
 
     /** 删除标记 0正常 1删除 */
     @TableField("del_flag")
@@ -117,6 +112,30 @@ public class THmfCycleTask implements Serializable {
         this.id = id;
     }
 
+    public Integer getRunNo() {
+        return runNo;
+    }
+
+    public void setRunNo(Integer runNo) {
+        this.runNo = runNo;
+    }
+
+    public Date getRunAt() {
+        return runAt;
+    }
+
+    public void setRunAt(Date runAt) {
+        this.runAt = runAt;
+    }
+
+    public Long getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(Long itemId) {
+        this.itemId = itemId;
+    }
+
     public String getItemNo() {
         return itemNo;
     }
@@ -125,44 +144,12 @@ public class THmfCycleTask implements Serializable {
         this.itemNo = itemNo;
     }
 
-    public Integer getItemKind() {
-        return itemKind;
+    public Integer getAction() {
+        return action;
     }
 
-    public void setItemKind(Integer itemKind) {
-        this.itemKind = itemKind;
-    }
-
-    public String getSiteNo() {
-        return siteNo;
-    }
-
-    public void setSiteNo(String siteNo) {
-        this.siteNo = siteNo;
-    }
-
-    public Date getDueAt() {
-        return dueAt;
-    }
-
-    public void setDueAt(Date dueAt) {
-        this.dueAt = dueAt;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
+    public void setAction(Integer action) {
+        this.action = action;
     }
 
     public Date getFinishAt() {
@@ -173,12 +160,12 @@ public class THmfCycleTask implements Serializable {
         this.finishAt = finishAt;
     }
 
-    public Integer getStatus() {
-        return status;
+    public String getDetail() {
+        return detail;
     }
 
-    public void setStatus(Integer status) {
-        this.status = status;
+    public void setDetail(String detail) {
+        this.detail = detail;
     }
 
     public Integer getDelFlag() {
