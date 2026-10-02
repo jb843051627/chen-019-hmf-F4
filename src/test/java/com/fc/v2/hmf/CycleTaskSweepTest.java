@@ -555,12 +555,12 @@ class CycleTaskSweepTest {
         Date at = t("2026-12-20 02:00:00");
         readyArch("JZ-D1", at);
         readyArch("JZ-D2", at);
-        arch("JZ-F1", 1, null, null);
+        arch("JZ-XF", 1, null, null);
 
         interest("JX-D1", "JZ-D1", at);
         interest("JX-D2-A", "JZ-D2", t("2026-12-20 00:30:00"));
         urge("JX-D2-B", "JZ-D2", t("2026-12-20 00:40:00"));
-        urge("CJ-F1", "JZ-F1", at);
+        urge("CJ-XF", "JZ-XF", at);
 
         CycleSweep live = service.sweepCycleTasks(at);
         assertEquals(2, live.getDoneCount());
